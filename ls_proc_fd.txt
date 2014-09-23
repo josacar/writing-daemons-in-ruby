@@ -1,0 +1,14 @@
+$ ls -l /proc/2206/fd
+total 0
+lrwx------ 1 selu selu 64 Sep 21 16:52 0 -> /dev/null
+lrwx------ 1 selu selu 64 Sep 21 16:52 1 -> /dev/null
+lrwx------ 1 selu selu 64 Sep 21 16:52 2 -> /dev/null
+lr-x------ 1 selu selu 64 Sep 21 16:52 3 -> pipe:[595663]
+l-wx------ 1 selu selu 64 Sep 21 16:52 4 -> pipe:[595663]
+lr-x------ 1 selu selu 64 Sep 21 16:52 5 -> pipe:[595664]
+l-wx------ 1 selu selu 64 Sep 21 16:52 6 -> pipe:[595664]
+
+
+$ ps xf -o pid,ppid,pgid,sid,command | grep -e [r]uby -e [P]ID
+  PID  PPID  PGID   SID COMMAND
+ 2206     1  2203  2203 ruby -e Process.daemon; sleep 3600

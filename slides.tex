@@ -1,0 +1,354 @@
+\documentclass{beamer}
+
+\usetheme{Frankfurt}
+
+\usepackage{color}
+\usepackage{graphicx}
+\usepackage{listings}
+\usepackage{color}
+\usepackage{courier}
+
+\lstdefinestyle{ruby}{  % code typesetting optins
+  basicstyle=\ttfamily\color{black},
+  commentstyle=\ttfamily\color{red},
+  keywordstyle=\ttfamily\color{blue},
+  stringstyle=\color{orange},
+  breaklines=true,
+  breakatwhitespace=true,
+  language=Ruby,
+  tabsize=2,
+  resetmargins=true,
+  xleftmargin=0pt,
+  frame=single,
+  showstringspaces=false
+}
+
+\lstdefinestyle{c}{
+  belowcaptionskip=1\baselineskip,
+  breaklines=true,
+  frame=single,
+  xleftmargin=\parindent,
+  language=C++,
+  showstringspaces=false,
+  basicstyle=\footnotesize\ttfamily,
+  keywordstyle=\bfseries\color{green!40!black},
+  commentstyle=\itshape\color{purple!40!black},
+  identifierstyle=\color{blue},
+  stringstyle=\color{orange},
+}
+
+\title{Daemons in Ruby}
+\author{Jose Luis Salas}
+\date{September 23, 2014}
+
+\AtBeginSection[]
+{
+  \begin{frame}
+    \frametitle{Presentation outline}
+    \tableofcontents[currentsection]
+  \end{frame}
+}
+
+\begin{document}
+
+\begin{frame}
+  \titlepage
+\end{frame}
+
+\section{Heads up}
+
+\begin{frame}[fragile]
+  \frametitle{Let's start}
+
+  Consider this code
+
+  \lstinputlisting[style=ruby]{endless.rb}
+
+  \pause Is this a daemon? \pause No, it isn't
+\end{frame}
+
+
+\begin{frame}
+  \frametitle{What's a daemon}
+
+  Daemons are processes on a system which principal characteristics are:
+
+  \begin{itemize}
+    \pause \item Aren't directly controlled by the user
+    \pause \item Run in background
+    \pause \item Are spawned tipically by init manager
+    \pause \item Tipically log data into logfiles
+    \pause \item Are detached from terminal
+  \end{itemize}
+\end{frame}
+
+\section{Processes}
+
+\begin{frame}
+  \frametitle{Process}
+
+  \begin{itemize}
+    \pause \item What is a process? \pause \\ Is an instance of a computer program that is being executed
+    \pause \item How processes are created? \pause fork in UNIX\pause, CreateProcess on the rest
+    \pause \item What is shared between processes? \pause Libraries? \pause Memory?
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{What is a process consisted of?}
+
+  \begin{itemize}
+    \pause \item An image of the executable machine code.
+    \pause \item Virtual memory which includes the executable code, process-specific data, a call stack, and a heap to hold intermediate computation data generated during run time.
+    \pause \item Operating system descriptors of resources, such as file descriptors.
+    \pause \item Security attributes, such as the process owner and the process' set of permissions.
+    \pause \item Processor state, such as the content of registers, physical memory addressing, etc. The state is typically stored in CPU registers when the process is executing, and in memory otherwise.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Executing a program}
+
+  \lstinputlisting[style=ruby]{process1.rb}
+
+  \pause
+  Hello from process 23191 \\
+  3.14-2-amd64
+\end{frame}
+
+\begin{frame}
+  \frametitle{Executing programs}
+
+  \begin{itemize}
+    \item Kernel.exec \pause: Replaces the current process image
+    \item Kernel.system \pause: Executes cmd in a subshell
+    \item Kernel.` ( backticks ) \pause: Executes cmd in a subshell
+    \item IO.popen \pause: Runs command as a subprocess
+    \item Open3.popen3
+    \item Process.spawn
+    \item Process.daemon
+    \item IO.popen4 ( JRuby )
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Creating a new process}
+
+  \lstinputlisting[style=ruby]{process2.rb}
+
+  \pause
+  I am process 23823 \\
+  I am process 23823 \\
+  I am process 23825
+\end{frame}
+
+
+\begin{frame}
+  \frametitle{Executing a new program in a new process}
+
+  \lstinputlisting[style=ruby]{process3.rb}
+
+  \pause
+  I am process 11135 \\
+  I am process 11135, I am waiting for process 11137 \\
+  I am process 11137, my parent is 11135
+\end{frame}
+
+
+\begin{frame}
+  \frametitle{Trying to become a daemon}
+
+  \lstinputlisting[style=ruby]{process5.rb}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Trying to become a daemon part 2}
+
+  \lstinputlisting{process5.txt}
+\end{frame}
+
+
+\begin{frame}
+  \frametitle{Communicating processes with pipes}
+
+  \lstinputlisting[style=ruby]{process4.rb}
+
+  \pause
+  valencia.rb
+\end{frame}
+
+
+\begin{frame}
+  \frametitle{Signals}
+
+  \lstinputlisting[style=ruby]{process6.rb}
+
+  \pause
+  \lstinputlisting{process6.txt}
+\end{frame}
+
+
+\section{Daemons}
+
+\begin{frame}
+  \frametitle{Steps to become a UNIX daemon}
+
+  \begin{itemize}
+    \pause \item Dissociate from the controlling tty
+    \pause \item Become a session leader
+    \pause \item Become a process group leader
+    \pause \item Execute as a background task by forking and exiting (once or twice), required sometimes to become a session leader.
+    \pause \item Setting the root directory (/) as the current working directory so that the process does not keep any directory in use.
+    \pause \item Changing the umask to 0 to allow operating system calls to provide their own permission masks and not to depend on the umask of the caller
+    \pause \item Closing all inherited files at the time of execution that are left open by the parent process, including file descriptors 0, 1 and 2.
+    \pause \item Using a logfile, the console, or /dev/null as stdin, stdout, and stderr
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Daemonizing in Ruby 1.9}
+
+  \lstinputlisting[style=ruby]{daemon2.rb}
+
+  \pause
+  \begin{itemize}
+    \item Detach the process from controlling terminal and run in the background as system daemon.
+    \item  Unless the argument nochdir is true, it changes the current working directory to /.
+    \item  Unless the argument noclose is true, daemon() will redirect standard input, standard output and standard error to /dev/null.
+    \item  Return zero on success, or raise one of Errno::*.
+  \end{itemize}
+\end{frame}
+
+
+\begin{frame}
+  \frametitle{proc\_daemon}
+  From https://github.com/ruby/ruby/blob/master/process.c
+
+  \lstinputlisting[style=c, basicstyle=\fontsize{6}{6}\selectfont]{proc_daemon.c}
+\end{frame}
+
+
+\begin{frame}
+  \frametitle{rb\_process}
+  From https://github.com/ruby/ruby/blob/master/process.c
+
+  \lstinputlisting[style=c, basicstyle=\fontsize{6}{6}\selectfont]{rb_process.c}
+\end{frame}
+
+
+\begin{frame}[fragile]
+  \frametitle{rb\_fork}
+  From https://github.com/ruby/ruby/blob/master/process.c
+
+  \lstinputlisting[style=c, basicstyle=\fontsize{6}{6}\selectfont]{rb_fork.c}
+\end{frame}
+
+
+\begin{frame}
+  \frametitle{rb\_fork\_err}
+  From https://github.com/ruby/ruby/blob/master/process.c
+
+  \lstinputlisting[style=c, basicstyle=\fontsize{6}{6}\selectfont]{rb_fork_err.c}
+\end{frame}
+
+
+\begin{frame}
+  \frametitle{proc\_setsid}
+  From https://github.com/ruby/ruby/blob/master/process.c
+
+  \lstinputlisting[style=c, basicstyle=\fontsize{6}{6}\selectfont]{proc_setsid.c}
+\end{frame}
+
+
+\begin{frame}
+  \frametitle{ruby\_setsid.c}
+  From https://github.com/ruby/ruby/blob/master/process.c
+
+  \lstinputlisting[style=c, basicstyle=\fontsize{6}{6}\selectfont]{ruby_setsid.c}
+\end{frame}
+
+
+\begin{frame}
+  \frametitle{proc\_setpgrp.c}
+  From https://github.com/ruby/ruby/blob/master/process.c
+
+  \lstinputlisting[style=c, basicstyle=\fontsize{6}{6}\selectfont]{setpgrp.c}
+\end{frame}
+
+
+\begin{frame}
+  \frametitle{How to daemonize a program in Ruby}
+
+  \lstinputlisting[style=ruby]{daemon.rb}
+\end{frame}
+
+
+\begin{frame}
+  \frametitle{Checking it live}
+
+  \lstinputlisting[basicstyle=\fontsize{8}{8}\selectfont]{ls_proc_fd.txt}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Daemonize in daemons gem}
+
+  \fontsize{6}{2}\selectfont{From https://github.com/ghazel/daemons/blob/master/lib/daemons/daemonize.rb}
+
+  \lstinputlisting[style=ruby, basicstyle=\fontsize{6}{6}\selectfont]{daemon3.rb}
+\end{frame}
+
+
+\section{Pimping our daemon}
+
+
+\begin{frame}
+  \frametitle{TCP preforking daemon}
+  \lstinputlisting[style=ruby, basicstyle=\fontsize{6}{6}\selectfont]{daemon4.rb}
+  \lstinputlisting{daemon4.txt}
+\end{frame}
+
+
+\begin{frame}
+  \frametitle{Improving signals}
+  \lstinputlisting[style=ruby]{daemon5.rb}
+\end{frame}
+
+
+\begin{frame}
+  \frametitle{Our robust daemon}
+  \lstinputlisting[style=ruby, basicstyle=\fontsize{6}{6}\selectfont]{daemon6.rb}
+  \lstinputlisting{daemon6.txt}
+\end{frame}
+
+
+\begin{frame}
+  \frametitle{Our robust daemon with logging}
+  \lstinputlisting[style=ruby, basicstyle=\fontsize{5}{5}\selectfont]{daemon7.rb}
+  \lstinputlisting[basicstyle=\fontsize{6}{6}\selectfont]{daemon7.txt}
+\end{frame}
+
+
+\begin{frame}
+  \frametitle{Logs rotation with a signal}
+
+  \fontsize{6}{6}\selectfont{From https://github.com/kennethkalmer/daemon-kit/blob/master/lib/daemon\_kit/application.rb}
+  \lstinputlisting[style=ruby, basicstyle=\fontsize{5}{5}\selectfont]{daemon8.rb}
+\end{frame}
+
+
+\begin{frame}
+  \frametitle{The end}
+  \pause Further info:
+  \begin{itemize}
+    \item http://codeincomplete.com/posts/2014/9/15/ruby\_daemons/
+    \item Working with unix processes by Jesse Storimer
+    \item lib/unicorn/launcher.rb in Unicorn gem
+    \item daemons, dante and daemon-kit gems
+    \item Linux System Programming: Talking Directly to the Kernel and C Library
+    \item Understanding the Linux Kernel
+  \end{itemize}
+  \pause \fontsize{36}{36}\selectfont{Questions?}
+  \pause \fontsize{36}{36}\selectfont{Thanks!}
+\end{frame}
+
+\end{document}

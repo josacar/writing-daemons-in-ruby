@@ -1,0 +1,3 @@
+$ nc localhost 8080; killall -INT ruby
+Hello from 8328
+Goodbye from 8328

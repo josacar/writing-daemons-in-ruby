@@ -1,0 +1,4 @@
+$ tail -f /tmp/logger.log
+# Logfile created on 2014-09-21 19:46:25 +0200 by logger.rb/v1.2.7
+I, [2014-09-21T19:47:12.696949 #9452]  INFO -- : Connection in 9452
+I, [2014-09-21T19:47:22.702008 #9449]  INFO -- : Connection in 9449
